@@ -1,3 +1,5 @@
+# This Python file uses the following encoding: utf-8
+
 import scrapy
 from fino.items import RealEstateItem
 
@@ -15,6 +17,14 @@ class RealEstateSpider(scrapy.Spider):
         qs_data = parse_qs(url_data.query)
         return qs_data["finnkode"][0]
 
+    @staticmethod
+    def normalizeLetter(word):
+        return word.replace("å", "aa").replace("æ", "ae").replace("ø", "o").replace(".", "").replace("/", "_")
+    
+    @staticmethod
+    def normalizeNumber(number):
+        toremove = dict.fromkeys((ord(c) for c in u'\xa0\n\t \,\-'))
+        return number.translate(toremove)
 
     def parse(self, response):
         for url in response.xpath('//div[@class="fright objectinfo"]/div/h2/a/@href').extract():
@@ -36,7 +46,7 @@ class RealEstateSpider(scrapy.Spider):
         item["finnCode"] = self.getCodeFromRawUrl(response.url)
         item["title"] =  response.xpath('//h1').extract() 
         item["address"] = response.xpath('//h1/following-sibling::p[1]').extract() 
-        #item["askingPrice"] = response.xpath('//h1/following-sibling::p[1]').extract() 
+        item["askingPrice"] = self.normalizeNumber(response.xpath('//h1/following-sibling::dl[1]/dd/text()').extract()[0])
         yield item
 
 
