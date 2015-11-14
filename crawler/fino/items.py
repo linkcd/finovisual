@@ -10,5 +10,6 @@ import scrapy
 
 class RealEstateItem(scrapy.Item):
     finnCode = scrapy.Field()
+    title = scrapy.Field()
     askingPrice = scrapy.Field()
     address = scrapy.Field()

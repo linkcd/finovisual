@@ -5,23 +5,38 @@ class RealEstateSpider(scrapy.Spider):
     name = "realEstate"
     start_urls = ["http://www.finn.no/finn/realestate/homes/result?areaId=20045"]
 
+    mobile_version_url_template = "http://m.finn.no/realestate/homes/ad.html?finnkode="
+
+    @staticmethod
+    def getCodeFromRawUrl(rawURL):
+        from urlparse import urlsplit
+        url_data = urlsplit(rawURL)
+        from urlparse import parse_qs
+        qs_data = parse_qs(url_data.query)
+        return qs_data["finnkode"][0]
+
+
     def parse(self, response):
         for url in response.xpath('//div[@class="fright objectinfo"]/div/h2/a/@href').extract():
-            yield scrapy.Request(url, self.parse_realEstate_page)
+            
+            #get code
+            code = self.getCodeFromRawUrl(url) 
+            
+            #get the mobile version url
+            mobile_version_url = self.mobile_version_url_template + code 
+            
+            yield scrapy.Request(mobile_version_url, self.parse_realEstate_page)
 
     def parse_realEstate_page(self, response):
         #from scrapy.shell import inspect_response
         #inspect_response(response, self)
         item = RealEstateItem()
 
-        #code
-        from urlparse import urlsplit
-        url_data = urlsplit(response.url)
-        from urlparse import parse_qs
-        qs_data = parse_qs(url_data.query)
-        item["finnCode"] = qs_data["finnkode"]
-
-        #item["askingPrice"] = response.xpath('//div[@class="bd objectinfo" and @data-automation-id="information"]/div[@class="line r-cols1to2"]/div[@class="unit"]/dl[@class="multicol"]/dt').extract_first()
+        #get code
+        item["finnCode"] = self.getCodeFromRawUrl(response.url)
+        item["title"] =  response.xpath('//h1').extract() 
+        item["address"] = response.xpath('//h1/following-sibling::p[1]').extract() 
+        #item["askingPrice"] = response.xpath('//h1/following-sibling::p[1]').extract() 
         yield item
 
 
