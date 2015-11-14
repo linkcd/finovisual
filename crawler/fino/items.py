@@ -9,5 +9,6 @@ import scrapy
 
 
 class PropertyItem(scrapy.Item):
+    finnCode = scrapy.Field()
     askingPrice = scrapy.Field()
     address = scrapy.Field()

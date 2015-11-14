@@ -13,7 +13,15 @@ class PropertySpider(scrapy.Spider):
         #from scrapy.shell import inspect_response
         #inspect_response(response, self)
         item = PropertyItem()
-        item["askingPrice"] = response.xpath('//div[@class="bd objectinfo" and @data-automation-id="information"]/div[@class="line r-cols1to2"]/div[@class="unit"]/dl[@class="multicol"]/dt').extract_first()
+
+        #code
+        from urlparse import urlsplit
+        url_data = urlsplit(response.url)
+        from urlparse import parse_qs
+        qs_data = parse_qs(url_data.query)
+        item["finnCode"] = qs_data["finnkode"]
+
+        #item["askingPrice"] = response.xpath('//div[@class="bd objectinfo" and @data-automation-id="information"]/div[@class="line r-cols1to2"]/div[@class="unit"]/dl[@class="multicol"]/dt').extract_first()
         yield item
 
 
