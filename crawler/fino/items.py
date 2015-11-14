@@ -8,7 +8,7 @@
 import scrapy
 
 
-class PropertyItem(scrapy.Item):
+class RealEstateItem(scrapy.Item):
     finnCode = scrapy.Field()
     askingPrice = scrapy.Field()
     address = scrapy.Field()
