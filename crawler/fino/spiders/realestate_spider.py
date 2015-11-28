@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+# -*- coding: utf-8 -*-
 
 import scrapy
 from fino.items import RealEstateItem
@@ -6,7 +6,6 @@ from fino.items import RealEstateItem
 class RealEstateSpider(scrapy.Spider):
     name = "realEstate"
     start_urls = ["http://www.finn.no/finn/realestate/homes/result?areaId=20045"]
-
     mobile_version_url_template = "http://m.finn.no/realestate/homes/ad.html?finnkode="
 
     @staticmethod
@@ -28,11 +27,8 @@ class RealEstateSpider(scrapy.Spider):
 
     def parse(self, response):
         for url in response.xpath('//div[@class="fright objectinfo"]/div/h2/a/@href').extract():
-            
-            #get code
-            code = self.getCodeFromRawUrl(url) 
-            
             #get the mobile version url
+            code = self.getCodeFromRawUrl(url) 
             mobile_version_url = self.mobile_version_url_template + code 
             
             yield scrapy.Request(mobile_version_url, self.parse_realEstate_page)
@@ -42,11 +38,12 @@ class RealEstateSpider(scrapy.Spider):
         #inspect_response(response, self)
         item = RealEstateItem()
 
-        #get code
         item["finnCode"] = self.getCodeFromRawUrl(response.url)
-        item["title"] =  response.xpath('//h1').extract() 
-        item["address"] = response.xpath('//h1/following-sibling::p[1]').extract() 
+        item["title"] =  response.xpath('//h1').extract()[0] 
+        item["address"] = response.xpath('//h1/following-sibling::p[1]').extract()[0]
         item["askingPrice"] = self.normalizeNumber(response.xpath('//h1/following-sibling::dl[1]/dd/text()').extract()[0])
+
+
         yield item
 
 
