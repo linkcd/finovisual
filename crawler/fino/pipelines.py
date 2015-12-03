@@ -20,9 +20,13 @@ class AzureStorageItemPipeline(object):
     headers = {'Content-Type': 'application/json'}
 
     def process_item(self, item, spider):
-        if item['finnCode']:
+        if item['askingPrice']:
             data=_encoder.encode(item)
-            r = requests.post(self.ws_url, data, headers = self.headers)
+            #r = requests.post(self.ws_url, data, headers = self.headers)
+            
+            pdb.set_trace()
+
             return item
         else:
+            pdb.set_trace()
             raise DropItem("Missing price in %s" % item)

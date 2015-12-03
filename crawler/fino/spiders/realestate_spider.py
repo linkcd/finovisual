@@ -2,6 +2,7 @@
 
 import scrapy
 from fino.items import RealEstateItem
+import pdb
 
 class RealEstateSpider(scrapy.Spider):
     name = "realEstate"
@@ -21,8 +22,13 @@ class RealEstateSpider(scrapy.Spider):
         return word.replace("å", "aa").replace("æ", "ae").replace("ø", "o").replace(".", "").replace("/", "_")
     
     @staticmethod
-    def normalizeNumber(number):
+    def normalizePrice(number):
         toremove = dict.fromkeys((ord(c) for c in u'\xa0\n\t \,\-'))
+        return number.translate(toremove)
+
+    @staticmethod
+    def normalizeSize(number):
+        toremove = dict.fromkeys((ord(c) for c in u'\xa0m\xb2\n\t '))
         return number.translate(toremove)
 
     def parse(self, response):
@@ -38,11 +44,44 @@ class RealEstateSpider(scrapy.Spider):
         #inspect_response(response, self)
         item = RealEstateItem()
 
-        item["finnCode"] = self.getCodeFromRawUrl(response.url)
-        item["title"] =  response.xpath('//h1').extract()[0] 
-        item["address"] = response.xpath('//h1/following-sibling::p[1]').extract()[0]
-        item["askingPrice"] = self.normalizeNumber(response.xpath('//h1/following-sibling::dl[1]/dd/text()').extract()[0])
 
+        priceFieldList = {  "Verditakst"    : "verditakst", \
+                            "Felleskost"    : "felleskost"  }
+
+        areaFieldList =  {  u"Prim"    : "primaerrom", \
+                            "Bruksareal"    : "bruksareal", \
+                            "Bruttoareal"   : "bruttoareal", \
+                            "Tomteareal"    : "tomteareal" }
+
+        integerFieldList = {"Rom": "rom", \
+                            "Bygge": "byggeaar", \
+                            "Soverom": "soverom"}
+
+        textFieldList = ["Boligtype", "Energimerking", "Eieform"]
+                            
+
+
+        item["finnCode"] = self.getCodeFromRawUrl(response.url)
+        item["title"] =  response.xpath('//h1/text()').extract()[0] 
+        item["address"] = response.xpath('//h1/following-sibling::p[1]/text()').extract()[0]
+        item["askingPrice"] = self.normalizePrice(response.xpath('//h1/following-sibling::dl[1]/dd/text()').extract()[0])
+
+        for k, v in priceFieldList.items():
+            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(k)
+            value = self.normalizePrice(response.xpath(xpath).extract()[0])
+            item[v] = self.normalizePrice(value)
+
+        for k, v in areaFieldList.items():
+            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(k)
+            item[v] = self.normalizeSize(response.xpath(xpath).extract()[0])
+
+        for k, v in integerFieldList.items():
+            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(k)
+            item[v] = self.normalizePrice(response.xpath(xpath).extract()[0])
+
+        for x in textFieldList:
+            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(x)
+            item[x.lower()] = self.normalizePrice(response.xpath(xpath).extract()[0])
 
         yield item
 
