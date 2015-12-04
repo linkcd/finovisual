@@ -43,6 +43,8 @@ class RealEstateSpider(scrapy.Spider):
         item = RealEstateItem()
 
         numberFields = {  "Verditakst"    : "verditakst",\
+                          "netakst"       : "laanetakst",\
+                          "Fellesformue"  : "fellesformue",\
                           "Felleskost"    : "felleskost",\
                           u"Prim"         : "primaerrom",\
                           "Bruksareal"    : "bruksareal",\
@@ -50,6 +52,7 @@ class RealEstateSpider(scrapy.Spider):
                           "Tomteareal"    : "tomteareal",\
                           "Rom"           : "rom", \
                           "Bygge"         : "byggeaar", \
+                          "Etasje"        : "etasje", \
                           "Soverom"       : "soverom"}
 
         oneWordTextFields = {    "Boligtype"     : "boligtype", \

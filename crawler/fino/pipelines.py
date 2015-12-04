@@ -5,14 +5,14 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import requests
-import json
-from scrapy.exceptions import DropItem
 import logging
-
-from scrapy.utils.serialize import ScrapyJSONEncoder
-_encoder = ScrapyJSONEncoder()
-
 import pdb
+
+from scrapy.exceptions import DropItem
+from scrapy.utils.serialize import ScrapyJSONEncoder
+encoder = ScrapyJSONEncoder()
+
+from geopy.geocoders import Nominatim
 
 class AzureStorageItemPipeline(object):
 
@@ -21,10 +21,20 @@ class AzureStorageItemPipeline(object):
 
     def process_item(self, item, spider):
         if item['askingPrice']:
-            data=_encoder.encode(item)
+
+            #geo code
+            geolocator = Nominatim()
+            location = geolocator.geocode(item["address"])
+            if location:
+                item["latitude"] = location[1][0]
+                item["longitude"] = location[1][1]
+            else:
+                pdb.set_trace()
+
+
+            #http post
+            data=encoder.encode(item)
             #r = requests.post(self.ws_url, data, headers = self.headers)
-            
-            pdb.set_trace()
 
             return item
         else:

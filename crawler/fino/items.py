@@ -11,20 +11,26 @@ import scrapy
 class RealEstateItem(scrapy.Item):
     finnCode = scrapy.Field()
     title = scrapy.Field()
-    askingPrice = scrapy.Field()
     address = scrapy.Field()
 
+    askingPrice = scrapy.Field()
     verditakst = scrapy.Field()
-    #laanetakst= scrapy.Field()
-    #fellesformue= scrapy.Field()
+    laanetakst= scrapy.Field()
     felleskost= scrapy.Field()
+    fellesformue= scrapy.Field()
+
     primaerrom= scrapy.Field()
     bruksareal= scrapy.Field()
-    soverom= scrapy.Field()
     bruttoareal= scrapy.Field()
+    soverom= scrapy.Field()
     rom= scrapy.Field()
-    boligtype= scrapy.Field()
-    eieform= scrapy.Field()
-    tomteareal= scrapy.Field()
+    etasje = scrapy.Field()
     byggeaar= scrapy.Field()
+    tomteareal= scrapy.Field()
+
+    eieform= scrapy.Field()
+    boligtype= scrapy.Field()
     energimerking= scrapy.Field()
+
+    latitude = scrapy.Field()
+    longitude = scrapy.Field()
