@@ -13,9 +13,10 @@ class RealEstateItem(scrapy.Item):
     title = scrapy.Field()
     askingPrice = scrapy.Field()
     address = scrapy.Field()
+
     verditakst = scrapy.Field()
-    laanetakst= scrapy.Field()
-    fellesformue= scrapy.Field()
+    #laanetakst= scrapy.Field()
+    #fellesformue= scrapy.Field()
     felleskost= scrapy.Field()
     primaerrom= scrapy.Field()
     bruksareal= scrapy.Field()

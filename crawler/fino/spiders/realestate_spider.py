@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import scrapy
-from fino.items import RealEstateItem
 import pdb
+from fino.items import RealEstateItem 
+from fino.itemloaders import RealEstateItemLoader
+from scrapy.loader.processors import MapCompose
 
 class RealEstateSpider(scrapy.Spider):
     name = "realEstate"
@@ -18,18 +20,14 @@ class RealEstateSpider(scrapy.Spider):
         return qs_data["finnkode"][0]
 
     @staticmethod
-    def normalizeLetter(word):
-        return word.replace("å", "aa").replace("æ", "ae").replace("ø", "o").replace(".", "").replace("/", "_")
-    
-    @staticmethod
-    def normalizePrice(number):
-        toremove = dict.fromkeys((ord(c) for c in u'\xa0\n\t \,\-'))
+    def normalizeNumber(number):
+        toremove = dict.fromkeys((ord(c) for c in u'\xa0mn\xb2\n\t \,\-'))
         return number.translate(toremove)
 
     @staticmethod
-    def normalizeSize(number):
-        toremove = dict.fromkeys((ord(c) for c in u'\xa0m\xb2\n\t '))
-        return number.translate(toremove)
+    def normalizeOneWordValue(rawOneWordValue):
+        toremove = dict.fromkeys((ord(c) for c in u'\n '))
+        return rawOneWordValue.translate(toremove)
 
     def parse(self, response):
         for url in response.xpath('//div[@class="fright objectinfo"]/div/h2/a/@href').extract():
@@ -44,46 +42,38 @@ class RealEstateSpider(scrapy.Spider):
         #inspect_response(response, self)
         item = RealEstateItem()
 
+        numberFields = {  "Verditakst"    : "verditakst",\
+                          "Felleskost"    : "felleskost",\
+                          u"Prim"         : "primaerrom",\
+                          "Bruksareal"    : "bruksareal",\
+                          "Bruttoareal"   : "bruttoareal",\
+                          "Tomteareal"    : "tomteareal",\
+                          "Rom"           : "rom", \
+                          "Bygge"         : "byggeaar", \
+                          "Soverom"       : "soverom"}
 
-        priceFieldList = {  "Verditakst"    : "verditakst", \
-                            "Felleskost"    : "felleskost"  }
+        oneWordTextFields = {    "Boligtype"     : "boligtype", \
+                          "Energimerking" : "energimerking", \
+                          "Eieform"       : "eieform" }
 
-        areaFieldList =  {  u"Prim"    : "primaerrom", \
-                            "Bruksareal"    : "bruksareal", \
-                            "Bruttoareal"   : "bruttoareal", \
-                            "Tomteareal"    : "tomteareal" }
-
-        integerFieldList = {"Rom": "rom", \
-                            "Bygge": "byggeaar", \
-                            "Soverom": "soverom"}
-
-        textFieldList = ["Boligtype", "Energimerking", "Eieform"]
-                            
-
+        xpathTemplate = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()"
 
         item["finnCode"] = self.getCodeFromRawUrl(response.url)
-        item["title"] =  response.xpath('//h1/text()').extract()[0] 
-        item["address"] = response.xpath('//h1/following-sibling::p[1]/text()').extract()[0]
-        item["askingPrice"] = self.normalizePrice(response.xpath('//h1/following-sibling::dl[1]/dd/text()').extract()[0])
+        l = RealEstateItemLoader(item = item, response = response)
+        l.add_xpath("title", '//h1/text()')
+        l.add_xpath("address", '//h1/following-sibling::p[1]/text()')
+        l.add_xpath("askingPrice", '//h1/following-sibling::dl[1]/dd/text()', MapCompose(self.normalizeNumber))
 
-        for k, v in priceFieldList.items():
-            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(k)
-            value = self.normalizePrice(response.xpath(xpath).extract()[0])
-            item[v] = self.normalizePrice(value)
+        for k, v in numberFields.items():
+            xpath = xpathTemplate.format(k)
+            l.add_xpath(v, xpath, MapCompose(self.normalizeNumber))
 
-        for k, v in areaFieldList.items():
-            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(k)
-            item[v] = self.normalizeSize(response.xpath(xpath).extract()[0])
+        for k, v in oneWordTextFields.items():
+            xpath = xpathTemplate.format(k)
+            l.add_xpath(v, xpath, MapCompose(self.normalizeOneWordValue))
 
-        for k, v in integerFieldList.items():
-            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(k)
-            item[v] = self.normalizePrice(response.xpath(xpath).extract()[0])
+        yield l.load_item()
 
-        for x in textFieldList:
-            xpath = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()".format(x)
-            item[x.lower()] = self.normalizePrice(response.xpath(xpath).extract()[0])
-
-        yield item
 
 
 
