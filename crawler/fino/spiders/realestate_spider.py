@@ -2,6 +2,7 @@
 
 import scrapy
 import pdb
+import re
 from fino.items import RealEstateItem 
 from fino.itemloaders import RealEstateItemLoader
 from scrapy.loader.processors import MapCompose
@@ -21,8 +22,11 @@ class RealEstateSpider(scrapy.Spider):
 
     @staticmethod
     def normalizeNumber(number):
-        toremove = dict.fromkeys((ord(c) for c in u'\xa0mn\xb2\n\t \,\-'))
-        return number.translate(toremove)
+        result = "".join(re.findall('\d+', number.replace(" ", "")))
+        if result.isdigit():
+            return result
+        else:
+            return None
 
     @staticmethod
     def normalizeOneWordValue(rawOneWordValue):
