@@ -6,16 +6,18 @@ import re
 from fino.items import RealEstateItem 
 from fino.itemloaders import RealEstateItemLoader
 from scrapy.loader.processors import MapCompose
+import time
+import datetime
 
 class RealEstateSpider(scrapy.Spider):
     name = "realEstate"
-    start_urls = ["http://www.finn.no/finn/realestate/homes/result?areaId=20045"]
-    mobile_version_url_template = "http://m.finn.no/realestate/homes/ad.html?finnkode="
+    start_urls = ["http://m.finn.no/realestate/homes/search.html?location=0.20003&location=1.20003.20045"]
 
     @staticmethod
-    def getCodeFromRawUrl(rawURL):
+    def getCodeFromRawUrl(rawUrl):
+        #get finncode
         from urlparse import urlsplit
-        url_data = urlsplit(rawURL)
+        url_data = urlsplit(rawUrl)
         from urlparse import parse_qs
         qs_data = parse_qs(url_data.query)
         return qs_data["finnkode"][0]
@@ -34,12 +36,9 @@ class RealEstateSpider(scrapy.Spider):
         return rawOneWordValue.translate(toremove)
 
     def parse(self, response):
-        for url in response.xpath('//div[@class="fright objectinfo"]/div/h2/a/@href').extract():
-            #get the mobile version url
-            code = self.getCodeFromRawUrl(url) 
-            mobile_version_url = self.mobile_version_url_template + code 
-            
-            yield scrapy.Request(mobile_version_url, self.parse_realEstate_page)
+        for url in response.xpath("//div[@class='flex-unit']/a/@href").extract():
+            follow_url = "http://m.finn.no" + url
+            yield scrapy.Request(follow_url, self.parse_realEstate_page)
 
     def parse_realEstate_page(self, response):
         #from scrapy.shell import inspect_response
@@ -64,13 +63,18 @@ class RealEstateSpider(scrapy.Spider):
                           "Eieform"       : "eieform" }
 
         xpathTemplate = "//h1/following-sibling::dl/dt[@data-automation-id='key' and contains(text(), '{0}')]/following-sibling::dd[1]/text()"
-
+        
+        item["url"] = response.url
         item["finnCode"] = self.getCodeFromRawUrl(response.url)
+        item["isNewBuilding"] = "newbuildings" in response.url
+        item["crawlTime"] = datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S") 
         l = RealEstateItemLoader(item = item, response = response)
         l.add_xpath("title", '//h1/text()')
         l.add_xpath("address", '//h1/following-sibling::p[1]/text()')
+        
+        l.add_xpath("askingPrice", '//div[@data-automation-id = "key" and text() = "Pris"]/following-sibling::div[@data-automation-id = "value"]/text()', MapCompose(self.normalizeNumber))
         l.add_xpath("askingPrice", '//h1/following-sibling::dl[1]/dd/text()', MapCompose(self.normalizeNumber))
-
+        
         for k, v in numberFields.items():
             xpath = xpathTemplate.format(k)
             l.add_xpath(v, xpath, MapCompose(self.normalizeNumber))
@@ -80,6 +84,7 @@ class RealEstateSpider(scrapy.Spider):
             l.add_xpath(v, xpath, MapCompose(self.normalizeOneWordValue))
 
         yield l.load_item()
+
 
 
 

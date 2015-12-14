@@ -34,8 +34,8 @@ class AzureStorageItemPipeline(object):
             if location:
                 item["latitude"] = location[1][0]
                 item["longitude"] = location[1][1]
-            else:
-                pdb.set_trace()
+#            else:
+#                pdb.set_trace()
 
             #http post
             data=encoder.encode(item)
@@ -43,4 +43,5 @@ class AzureStorageItemPipeline(object):
 
             return item
         else:
+            pdb.set_trace()
             raise DropItem("Missing price in %s" % item)

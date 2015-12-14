@@ -9,6 +9,7 @@ import scrapy
 
 
 class RealEstateItem(scrapy.Item):
+    url = scrapy.Field()
     finnCode = scrapy.Field()
     title = scrapy.Field()
     address = scrapy.Field()
@@ -34,3 +35,6 @@ class RealEstateItem(scrapy.Item):
 
     latitude = scrapy.Field()
     longitude = scrapy.Field()
+
+    isNewBuilding = scrapy.Field()
+    crawlTime = scrapy.Field()
