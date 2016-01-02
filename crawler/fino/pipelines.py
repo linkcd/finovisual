@@ -8,6 +8,7 @@ import requests
 import logging
 import pdb
 import os
+import yaml
 
 from scrapy.exceptions import DropItem
 from scrapy.utils.serialize import ScrapyJSONEncoder
@@ -17,19 +18,19 @@ from geopy.geocoders import Nominatim, GoogleV3
 
 class AzureStorageItemPipeline(object):
 
-    ws_url = "http://finovisualization.azurewebsites.net/api/RealEstates"
-    headers = {'Content-Type': 'application/json'}
-    key = None
-    keyFileName = os.path.join(os.path.dirname(__file__), 'googleGeoAPI.key')
+    keyFileName = os.path.join(os.path.dirname(__file__), 'keys.key')
+    filestream = open(keyFileName, "r")
+    keys = yaml.load(filestream)
 
-    with open(keyFileName, "r") as keyFile:
-        key = keyFile.read().replace('\n', '')
+    ws_url = "http://finovisualization.azurewebsites.net/api/RealEstates"
+    headers = {'Content-Type': 'application/json', 'X-API-Key':keys["WebAPIKey"]}
+        
 
     def process_item(self, item, spider):
         if item['askingPrice']:
 
             #geo code
-            geolocator = GoogleV3(api_key=self.key)
+            geolocator = GoogleV3(api_key=self.keys["GoogleGeoAPIKey"])
             location = geolocator.geocode(item["address"])
             if location:
                 item["latitude"] = location[1][0]
