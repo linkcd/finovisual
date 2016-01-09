@@ -10,6 +10,9 @@ import pdb
 import os
 import yaml
 
+from fino.items import RealEstateItem 
+from fino.items import CarItem 
+
 from scrapy.exceptions import DropItem
 from scrapy.utils.serialize import ScrapyJSONEncoder
 encoder = ScrapyJSONEncoder()
@@ -21,12 +24,27 @@ class AzureStorageItemPipeline(object):
     keyFileName = os.path.join(os.path.dirname(__file__), 'keys.key')
     filestream = open(keyFileName, "r")
     keys = yaml.load(filestream)
-
-    ws_url = "http://finovisualization.azurewebsites.net/api/RealEstates"
     headers = {'Content-Type': 'application/json', 'X-API-Key':keys["WebAPIKey"]}
+
+    def postToWebService(self, item, url):
+        #http post
+        data=encoder.encode(item)
+        r = requests.post(url, data, headers = self.headers)
         
 
     def process_item(self, item, spider):
+        if type(item) is RealEstateItem:
+            self.handle_realEstate(item)
+        if type(item) is CarItem:
+            self.handle_car(item)
+        return item
+
+
+    def handle_car(self, item):
+        pass
+
+
+    def handle_realEstate(self, item):
         if item['askingPrice']:
 
             #geo code
@@ -38,11 +56,9 @@ class AzureStorageItemPipeline(object):
 #            else:
 #                pdb.set_trace()
 
-            #http post
-            data=encoder.encode(item)
-            r = requests.post(self.ws_url, data, headers = self.headers)
+            url = "http://finovisualization.azurewebsites.net/api/RealEstates"
 
-            return item
+            self.postToWebService(item, url)
         else:
             pdb.set_trace()
             raise DropItem("Missing price in %s" % item)
