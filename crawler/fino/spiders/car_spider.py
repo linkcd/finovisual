@@ -13,15 +13,45 @@ from fino.itemloaders import CarItemLoader
 
 
 class CarSpider(scrapy.Spider):
+    domain = "http://m.finn.no"
+        
+    areas = {
+        "Akershus":"20003",\
+        "Aust-Agder":"20010",\
+        "Buskerud":"20007",\
+        "Finnmark":"20020",\
+        "Hedmark":"20005",\
+        "Hordaland":"20013",\
+        "Møre og Romsdal":"20015",\
+        "Nord-Trøndelag":"20017",\
+        "Nordland":"20018",\
+        "Oppland":"20006",\
+        "Oslo":"20061",\
+        "Rogaland":"20012",\
+        "Sogn og Fjordane":"20014",\
+        "Sør-Trøndelag":"20016",\
+        "Telemark":"20009",\
+        "Troms":"20019",\
+        "Vest-Agder":"20011",\
+        "Vestfold":"20008",\
+        "Østfold":"20002" }
+
     name = "car"
-    start_urls = ["http://m.finn.no/car/used/search.html?make=0.813&make=0.817&model=1.813.2000062&model=1.817.1433"]
+    #start_urls = [domain + "/car/used/search.html?make=0.813&make=0.817&model=1.813.2000062&model=1.817.1433"] #all Golf and Auris
+    start_urls = [domain + "/car/used/search.html?make=0.744&make=0.808&make=0.817&model=1.744.2000166&model=1.744.2046&model=1.808.1355&model=1.817.1437"]
 
     def parse(self, response):
         for url in response.xpath("//div[@class='flex-unit']/a/@href").extract():
             follow_url = "http://m.finn.no" + url
             yield scrapy.Request(follow_url, self.parse_car_page)
+        
+        next_page_url = response.xpath('//a[@rel = "next"]/@href').extract() 
+        if not not next_page_url:
+            yield scrapy.Request(self.domain + next_page_url[0], self.parse)
+    
 
     def parse_car_page(self, response):
+
         item = CarItem()
 
         item["url"] = response.url

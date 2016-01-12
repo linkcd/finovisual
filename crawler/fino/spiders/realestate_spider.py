@@ -22,6 +22,10 @@ class RealEstateSpider(scrapy.Spider):
             follow_url = "http://m.finn.no" + url
             yield scrapy.Request(follow_url, self.parse_realEstate_page)
 
+        next_page_url = response.xpath('//a[@rel = "next"]/@href').extract() 
+        if not not next_page_url:
+            yield scrapy.Request(self.domain + next_page_url[0], self.parse)
+
     def parse_realEstate_page(self, response):
         item = RealEstateItem()
 
